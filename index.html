@@ -13,35 +13,45 @@
     .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
     .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; background: #ccc; border: 1px solid #ccc; }
     .cell { background: #fff; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; border: none; }
+    select, input { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    #command-form { display: none; margin-top: 15px; border-top: 2px dashed #ddd; padding-top: 15px; }
   </style>
 </head>
 <body>
 
   <h1>🏝️ 箱庭諸島 × 英単語クイズ</h1>
 
-  <!-- ステータス・ターン表示 -->
-  <div class="card">
-    <div id="turn-info">ターン読み込み中...</div>
-    <div id="player-status"></div>
-  </div>
-
-  <!-- クイズエリア -->
+  <!-- クイズ ＆ コマンド入力エリア -->
   <div class="card" id="quiz-card">
     <h2>📝 ターン開発クイズ (全10問)</h2>
     <div id="quiz-container">
       <p id="question">クイズを読み込んでいます...</p>
       <div id="choices"></div>
     </div>
-  </div>
 
-  <!-- 島マップ表示エリア -->
-  <div class="card">
-    <h2>🗺️ 自分の島</h2>
-    <div id="map-grid" class="grid"></div>
+    <!-- 7問以上正解で表示されるコマンド入力フォーム -->
+    <div id="command-form">
+      <h3>🚀 コマンドを入力して送信</h3>
+      <label>島名（プレイヤー名）:</label>
+      <input type="text" id="player-name" placeholder="例: ひまわり島">
+
+      <label>実行コマンド:</label>
+      <select id="command-type">
+        <option value="整地">整地 (資金: 5億円)</option>
+        <option value="農場建設">農場建設 (資金: 20億円)</option>
+        <option value="工場建設">工場建設 (資金: 50億円)</option>
+        <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
+        <option value="偽装基地建設">偽装基地建設 (資金: 80億円)</option>
+        <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
+        <option value="PPミサイル発射">PPミサイル発射 (資金: 50億円)</option>
+      </select>
+
+      <button class="btn" onclick="submitCommand()">コマンドを確定して送信</button>
+      <p id="submit-status" style="font-weight:bold; color:blue;"></p>
+    </div>
   </div>
 
   <script>
-    // 最新デプロイのWebアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycby4Up8FLPspQGRZGHa6TgUKEGHdahucq3-Y4gntjne1NNzaUowhjGaHcF-gyOGIkO_x/exec";
 
     let wordsData = [];
@@ -80,15 +90,49 @@
     }
 
     function finishQuiz() {
-      const quizCard = document.getElementById('quiz-card');
-      quizCard.innerHTML = `<h3>クイズ終了！</h3><p>結果: 10問中 <b>${score}</b> 問正解</p>`;
+      const quizContainer = document.getElementById('quiz-container');
+      quizContainer.innerHTML = `<h3>クイズ終了！</h3><p>結果: 10問中 <b>${score}</b> 問正解</p>`;
+      
       if (score >= 7) {
-        quizCard.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！</p>`;
+        quizContainer.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！下のフォームから指示を出してください。</p>`;
+        document.getElementById('command-form').style.display = 'block'; // フォームを表示
       } else if (score <= 2) {
-        quizCard.innerHTML += `<p style="color:red;">⚠️ クイズ失敗... 島に怪獣が出現するリスクがあります！</p>`;
+        quizContainer.innerHTML += `<p style="color:red;">⚠️ クイズ失敗... 島に怪獣が出現するリスクがあります！</p>`;
       } else {
-        quizCard.innerHTML += `<p style="color:orange;">💤 今ターンは停滞（コマンド実行なし）となります。</p>`;
+        quizContainer.innerHTML += `<p style="color:orange;">💤 今ターンは停滞（コマンド実行なし）となります。</p>`;
       }
+    }
+
+    // コマンド送信処理
+    function submitCommand() {
+      const name = document.getElementById('player-name').value;
+      const cmd = document.getElementById('command-type').value;
+      const status = document.getElementById('submit-status');
+
+      if (!name) {
+        alert("島名（プレイヤー名）を入力してください。");
+        return;
+      }
+
+      status.innerText = "送信中...";
+
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submitCommand",
+          playerName: name,
+          command: cmd,
+          score: score
+        })
+      })
+      .then(() => {
+        status.innerHTML = "✅ コマンドを送信しました！<br>次回の更新ターン（6時間ごと）に実行されます。";
+      })
+      .catch(err => {
+        status.innerText = "送信エラーが発生しました。";
+      });
     }
   </script>
 </body>
