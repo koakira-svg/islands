@@ -11,14 +11,55 @@
     .btn { background: #4CAF50; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 1rem; margin-top: 8px; cursor: pointer; }
     .btn:active { background: #45a049; }
     .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
+
+    /* 本家箱庭風ステータスパネル */
+    .status-panel {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+    .status-item { text-align: center; }
+    .status-item span { display: block; font-weight: bold; color: #1b5e20; font-size: 1rem; }
     
-    /* 12x12の島マップ用スタイル */
-    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; background: #87CEEB; padding: 4px; border-radius: 4px; margin-top: 10px; }
-    .cell { background: #90EE90; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; user-select: none; }
-    .cell.selected { border: 2px solid #FF0000; font-weight: bold; background: #FFE4E1; }
+    /* 箱庭諸島 特有のマップスタイル（偶数列ずらし ＆ ドット絵画像対応） */
+    .map-container {
+      overflow-x: auto;
+      background: #4169E1; /* 海の色 */
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .grid { display: inline-block; white-space: nowrap; }
+    .map-row { display: flex; height: 32px; margin-bottom: 2px; }
+    .map-row.even-row { margin-left: 16px; } /* 偶数行の半分ずらし */
     
+    .cell {
+      width: 32px;
+      height: 32px;
+      margin-right: 2px;
+      box-sizing: border-box;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .cell.selected {
+      border: 2px solid #FF0000 !important;
+      box-shadow: 0 0 5px #FF0000;
+      transform: scale(1.1);
+      z-index: 10;
+    }
+
     select, input { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    .coords-display { font-size: 0.9rem; color: #d9534f; font-weight: bold; margin-top: 5px; }
+    .coords-display { font-size: 0.9rem; color: #d9534f; font-weight: bold; margin-top: 8px; text-align: center; }
     
     /* ランキングテーブル */
     table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
@@ -38,24 +79,20 @@
       margin-bottom: 15px;
       text-align: center;
     }
-    .turns-count {
-      font-size: 1.4rem;
-      color: #2e7d32;
-      font-weight: bold;
-    }
+    .turns-count { font-size: 1.4rem; color: #2e7d32; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <h1>🏝️ 箱庭諸島 × 英単語クイズ</h1>
 
-  <!-- 初回登録モーダル（未登録時に自動表示） -->
+  <!-- 初回登録モーダル -->
   <div id="register-modal" style="display: none;">
     <div class="modal-content">
-      <h2>🏆 島主登録（初回のみ）</h2>
-      <p style="font-size: 0.85rem; color: #666;">箱庭諸島へようこそ！あなたの島名を入力してゲームを開始してください。</p>
+      <h2>🏆 島主登録（初回建国）</h2>
+      <p style="font-size: 0.85rem; color: #666;">無人島を発見しました！あなたの島名を入力して建国してください。<br>(初期資金: 1,000億円 / 初期食料: 10,000トン)</p>
       <input type="text" id="reg-island-name" placeholder="例: ひまわり島">
-      <button class="btn" onclick="registerIsland()">島を作成して建国する</button>
+      <button class="btn" onclick="registerIsland()">島をランダム生成して建国する</button>
     </div>
   </div>
 
@@ -77,17 +114,31 @@
     </table>
   </div>
 
-  <!-- トップ画面：2. 自分の島マップ -->
+  <!-- トップ画面：2. 自分の島マップ＆ステータス -->
   <div class="card">
-    <h2>🗺️ 自分の島マップ (<span id="my-island-title">マイ島</span>)</h2>
-    <p style="font-size: 0.8rem; color: #666; margin:0;">開発したいマス目をタップして選択してください。</p>
-    <div id="map-grid" class="grid"></div>
-    <div class="coords-display" id="coords-text">選択座標: X: 0, Y: 0</div>
+    <h2>🗺️ <span id="my-island-title">マイ島</span> の開発画面</h2>
+    
+    <!-- 本家準拠のステータスパネル -->
+    <div class="status-panel">
+      <div class="status-item">人口<span id="st-pop">1,000人</span></div>
+      <div class="status-item">資金<span id="st-money">1,000億円</span></div>
+      <div class="status-item">食料<span id="st-food">10,000トン</span></div>
+      <div class="status-item">農場<span id="st-farm">100人規模</span></div>
+      <div class="status-item">工場<span id="st-factory">0人規模</span></div>
+      <div class="status-item">ミサイル基地<span id="st-base">0箇所</span></div>
+    </div>
+
+    <p style="font-size: 0.8rem; color: #666; margin:0 0 8px 0;">マス目をタップして開発場所を選択してください。</p>
+    
+    <div class="map-container">
+      <div id="map-grid" class="grid"></div>
+    </div>
+    <div class="coords-display" id="coords-text">選択座標: X: 0, Y: 0 (平地)</div>
   </div>
 
   <!-- トップ画面：3. クイズ ＆ コマンド送信エリア -->
   <div class="card" id="action-card">
-    <!-- 初心者期間メッセージ（残数がひと目でわかるデザイン） -->
+    <!-- 初心者期間メッセージ -->
     <div id="beginner-notice" class="beginner-badge" style="display:none;">
       🔰 <b>初心者保護期間中</b><br>
       クイズ免除の残りコマンド可能数: <span class="turns-count" id="turns-left">5</span> 回
@@ -107,12 +158,13 @@
       <label style="display: block;">実行コマンド:</label>
       <select id="command-type">
         <option value="整地">整地 (資金: 5億円)</option>
-        <option value="農場建設">農場建設 (資金: 20億円)</option>
+        <option value="埋め立て">浅瀬埋め立て (資金: 15億円)</option>
+        <option value="農場整備">農場整備 (資金: 20億円)</option>
         <option value="工場建設">工場建設 (資金: 50億円)</option>
+        <option value="採掘場建設">油田採掘 (資金: 100億円)</option>
         <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
-        <option value="偽装基地建設">偽装基地建設 (資金: 80億円)</option>
+        <option value="防衛施設建設">防空基地建設 (資金: 100億円)</option>
         <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
-        <option value="PPミサイル発射">PPミサイル発射 (資金: 50億円)</option>
       </select>
 
       <button class="btn" onclick="submitCommand()">選択したマス(座標)へコマンドを送信</button>
@@ -123,6 +175,35 @@
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycby4Up8FLPspQGRZGHa6TgUKEGHdahucq3-Y4gntjne1NNzaUowhjGaHcF-gyOGIkO_x/exec";
 
+    // image フォルダ内の画像ファイル名設定（ファイル名そのまま参照）
+    const LAND_IMAGES = {
+      sea: "./image/land0.gif",         // 海
+      waste: "./image/land1.gif",       // 荒地
+      plains: "./image/land2.gif",      // 平地
+      town: "./image/land3.gif",        // 町
+      shallow: "./image/land4.gif",     // 浅瀬
+      shallowShip: "./image/land5.gif", // 浅瀬（船）
+      forest: "./image/land6.gif",      // 森
+      farm: "./image/land7.gif",        // 農場
+      factory: "./image/land8.gif",     // 工場
+      base: "./image/land9.gif",        // ミサイル基地
+      defence: "./image/land10.gif",    // 防空基地
+      monolith: "./image/land11.gif",   // モノリス
+      mountain: "./image/land12.gif",   // 山
+      monster: "./image/land13.gif",    // 怪獣
+      seaCity: "./image/land14.gif",    // 海底都市
+      oil: "./image/land15.gif"         // 油田
+    };
+
+    const LAND_NAMES = {
+      sea: "海", waste: "荒地", plains: "平地", town: "町",
+      shallow: "浅瀬", shallowShip: "浅瀬(船)", forest: "森",
+      farm: "農場", factory: "工場", base: "ミサイル基地",
+      defence: "防空基地", monolith: "モノリス", mountain: "山",
+      monster: "怪獣", seaCity: "海底都市", oil: "油田"
+    };
+
+    let islandMap = [];
     let wordsData = [];
     let currentQuizIndex = 0;
     let score = 0;
@@ -137,14 +218,13 @@
         document.getElementById("register-modal").style.display = "flex";
       } else {
         document.getElementById("my-island-title").innerText = myIslandName;
+        loadSavedMap();
         setupTurnMode();
       }
-
-      initMap();
       loadRanking();
     };
 
-    // 島登録処理
+    // 初回登録＆ランダム島生成
     function registerIsland() {
       const inputName = document.getElementById("reg-island-name").value.trim();
       if (!inputName) {
@@ -155,25 +235,108 @@
       localStorage.setItem("hakoniwa_island_name", myIslandName);
       localStorage.setItem("hakoniwa_play_turns", "0");
       playTurns = 0;
+
+      generateRandomIsland();
       
       document.getElementById("register-modal").style.display = "none";
       document.getElementById("my-island-title").innerText = myIslandName;
-      
       setupTurnMode();
     }
 
-    // 初心者（最初の5ターン）と通常モードの切り替え
+    // 本家準拠の各種地形・要素を含むランダム島生成ロジック (12x12)
+    function generateRandomIsland() {
+      islandMap = Array.from({ length: 12 }, () => Array(12).fill("sea"));
+
+      // 沿岸部に浅瀬を配置
+      for (let y = 1; y <= 10; y++) {
+        for (let x = 1; x <= 10; x++) {
+          if (x === 1 || x === 10 || y === 1 || y === 10) {
+            if (Math.random() < 0.4) islandMap[y][x] = "shallow";
+          }
+        }
+      }
+
+      // 中央部（2..9）に島を形成
+      for (let y = 2; y <= 9; y++) {
+        for (let x = 2; x <= 9; x++) {
+          const rand = Math.random();
+          if (rand < 0.45) islandMap[y][x] = "plains";
+          else if (rand < 0.65) islandMap[y][x] = "waste";
+          else if (rand < 0.85) islandMap[y][x] = "forest";
+          else if (rand < 0.93) islandMap[y][x] = "mountain";
+          else islandMap[y][x] = "sea";
+        }
+      }
+
+      // 初期拠点（町・農場・工場）および特殊要素（浅瀬船・油田）の配置
+      islandMap[5][5] = "town";
+      islandMap[5][6] = "farm";
+      islandMap[6][5] = "factory";
+      islandMap[2][2] = "oil";          // 初期油田
+      islandMap[1][5] = "shallowShip";  // 漁船付き浅瀬
+
+      localStorage.setItem("hakoniwa_map_data", JSON.stringify(islandMap));
+      renderMap();
+    }
+
+    function loadSavedMap() {
+      const savedMap = localStorage.getItem("hakoniwa_map_data");
+      if (savedMap) {
+        islandMap = JSON.parse(savedMap);
+      } else {
+        generateRandomIsland();
+        return;
+      }
+      renderMap();
+    }
+
+    // マップ描画（image/ フォルダ内の画像を表示）
+    function renderMap() {
+      const mapGrid = document.getElementById('map-grid');
+      mapGrid.innerHTML = '';
+
+      for (let y = 0; y < 12; y++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = `map-row ${y % 2 !== 0 ? 'even-row' : ''}`;
+
+        for (let x = 0; x < 12; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          const type = islandMap[y][x] || "sea";
+
+          cell.style.backgroundImage = `url(${LAND_IMAGES[type]})`;
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          cell.dataset.type = type;
+
+          if (x === selectedX && y === selectedY) {
+            cell.classList.add('selected');
+          }
+
+          cell.onclick = () => selectCell(cell, x, y, type);
+          rowDiv.appendChild(cell);
+        }
+        mapGrid.appendChild(rowDiv);
+      }
+    }
+
+    function selectCell(cell, x, y, type) {
+      document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
+      selectedX = x;
+      selectedY = y;
+      document.getElementById('coords-text').innerText = `選択座標: X: ${x}, Y: ${y} (${LAND_NAMES[type] || "平地"})`;
+    }
+
     function setupTurnMode() {
       const remainingTurns = 5 - playTurns;
 
       if (remainingTurns > 0) {
-        // クイズスキップモード
         document.getElementById("beginner-notice").style.display = "block";
         document.getElementById("turns-left").innerText = remainingTurns;
         document.getElementById("quiz-container").style.display = "none";
         document.getElementById("command-form").style.display = "block";
       } else {
-        // 通常クイズモード
         document.getElementById("beginner-notice").style.display = "none";
         document.getElementById("quiz-container").style.display = "block";
         document.getElementById("command-form").style.display = "none";
@@ -181,13 +344,12 @@
       }
     }
 
-    // 仮のランキング描画
     function loadRanking() {
       const rankingList = document.getElementById("ranking-list");
       const dummyData = [
-        { rank: 1, name: myIslandName || "新規島", pop: "1,200人", money: "3,000億円" },
-        { rank: 2, name: "ひまわり島", pop: "800人", money: "1,500億円" },
-        { rank: 3, name: "わくわく島", pop: "500人", money: "500億円" }
+        { rank: 1, name: myIslandName || "新規島", pop: "1,000人", money: "1,000億円" },
+        { rank: 2, name: "ひまわり島", pop: "800人", money: "850億円" },
+        { rank: 3, name: "わくわく島", pop: "500人", money: "400億円" }
       ];
 
       rankingList.innerHTML = dummyData.map(d => `
@@ -200,33 +362,6 @@
       `).join("");
     }
 
-    // 12x12の島マップグリッドを作成
-    function initMap() {
-      const mapGrid = document.getElementById('map-grid');
-      mapGrid.innerHTML = '';
-      for (let y = 0; y < 12; y++) {
-        for (let x = 0; x < 12; x++) {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
-          cell.innerText = '平';
-          cell.dataset.x = x;
-          cell.dataset.y = y;
-          if (x === 0 && y === 0) cell.classList.add('selected');
-          cell.onclick = () => selectCell(cell, x, y);
-          mapGrid.appendChild(cell);
-        }
-      }
-    }
-
-    function selectCell(cell, x, y) {
-      document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-      cell.classList.add('selected');
-      selectedX = x;
-      selectedY = y;
-      document.getElementById('coords-text').innerText = `選択座標: X: ${x}, Y: ${y}`;
-    }
-
-    // クイズ処理
     function loadQuiz() {
       fetch('words.json')
         .then(res => res.json())
@@ -266,14 +401,11 @@
       if (score >= 7) {
         quizContainer.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！</p>`;
         document.getElementById('command-form').style.display = 'block';
-      } else if (score <= 2) {
-        quizContainer.innerHTML += `<p style="color:red;">⚠️ クイズ失敗... 島に怪獣が出現するリスクがあります！</p>`;
       } else {
-        quizContainer.innerHTML += `<p style="color:orange;">💤 今ターンは停滞（コマンド実行なし）となります。</p>`;
+        quizContainer.innerHTML += `<p style="color:orange;">💤 正解数が足りないため今ターンは開発できません。</p>`;
       }
     }
 
-    // コマンド送信処理
     function submitCommand() {
       const cmd = document.getElementById('command-type').value;
       const status = document.getElementById('submit-status');
@@ -297,9 +429,7 @@
         playTurns++;
         localStorage.setItem("hakoniwa_play_turns", playTurns.toString());
 
-        status.innerHTML = `✅ コマンドを送信しました！<br>（指示: [${cmd}] 座標: X=${selectedX}, Y=${selectedY}）<br>次回の更新ターンに自動実行されます。`;
-        
-        // 残りターン数の表示を更新
+        status.innerHTML = `✅ コマンドを送信しました！<br>（指示: [${cmd}] 座標: X=${selectedX}, Y=${selectedY}）`;
         setupTurnMode();
       })
       .catch(err => {
