@@ -159,14 +159,21 @@
       <h3 style="margin-top: 0;">🚀 開発指示の送信</h3>
       <label style="display: block;">実行コマンド:</label>
       <select id="command-type">
-        <option value="整地">整地 (資金: 5億円)</option>
-        <option value="埋め立て">浅瀬埋め立て (資金: 15億円)</option>
-        <option value="農場整備">農場整備 (資金: 20億円)</option>
-        <option value="工場建設">工場建設 (資金: 50億円)</option>
-        <option value="採掘場建設">油田採掘 (資金: 100億円)</option>
-        <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
-        <option value="防衛施設建設">防空基地建設 (資金: 100億円)</option>
-        <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
+        <optgroup label="地形変更・施設建設">
+          <option value="整地">整地 (資金: 5億円)</option>
+          <option value="埋め立て">浅瀬埋め立て (資金: 15億円)</option>
+          <option value="農場整備">農場整備 (資金: 20億円)</option>
+          <option value="工場建設">工場建設 (資金: 50億円)</option>
+          <option value="採掘場建設">油田採掘 (資金: 100億円)</option>
+          <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
+          <option value="海底ミサイル基地建設">海底ミサイル基地建設 (資金: 150億円)</option>
+          <option value="防衛施設建設">防空基地建設 (資金: 100億円)</option>
+          <option value="モノリス建設">モノリス建設 (資金: 300億円)</option>
+        </optgroup>
+        <optgroup label="攻撃・特殊コマンド">
+          <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
+          <option value="モノリス発射">モノリス発射 (資金: 100億円)</option>
+        </optgroup>
       </select>
 
       <button class="btn" onclick="submitCommand()">選択したマス(座標)へコマンドを送信</button>
@@ -215,7 +222,6 @@
     let registeredIslands = [];
 
     let myIslandName = localStorage.getItem("hakoniwa_island_name");
-    // 残りコマンド可能数を保持 (デフォルト初期値5回)
     let availableCommands = parseInt(localStorage.getItem("hakoniwa_available_commands") || "5");
 
     window.onload = () => {
@@ -243,27 +249,31 @@
         return;
       }
 
-      if (registeredIslands.includes(inputName)) {
-        errorDiv.innerText = "その島名はすでに使われています。別の名前を入力してください。";
-        errorDiv.style.display = "block";
-        return;
-      }
-
       regBtn.disabled = true;
       regBtn.innerText = "確認中...";
 
       try {
-        const response = await fetch(`${GAS_URL}?action=checkName&name=${encodeURIComponent(inputName)}`);
+        // 5秒タイムアウト付きでGAS照会を行う
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(`${GAS_URL}?action=checkName&name=${encodeURIComponent(inputName)}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
         const data = await response.json();
 
         if (data.exists) {
-          errorDiv.innerText = "その島名はすでに登録されています。別の名前を選択してください。";
+          errorDiv.innerText = "その島名はすでに使われています。別の名前を入力してください。";
           errorDiv.style.display = "block";
           regBtn.disabled = false;
           regBtn.innerText = "島をランダム生成して建国する";
           return;
         }
-      } catch (e) {}
+      } catch (e) {
+        // 通信エラーやタイムアウトが発生した場合はそのまま進行できるように制御
+      }
 
       myIslandName = inputName;
       availableCommands = 5;
@@ -511,7 +521,6 @@
       });
     }
 
-    // 自分の島を削除（リセット）する処理
     function deleteMyIsland() {
       const confirmDelete = confirm(`「${myIslandName}」を完全に削除してリセットしますか？\n（この操作は消去されたら元に戻せません）`);
       
