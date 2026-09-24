@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英単語 × 箱庭諸島</title>
+  <style>
+    body { font-family: sans-serif; background: #eef2f5; margin: 0; padding: 15px; }
+    h1 { font-size: 1.2rem; text-align: center; color: #333; }
+    .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    .btn { background: #4CAF50; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 1rem; margin-top: 8px; cursor: pointer; }
+    .btn:active { background: #45a049; }
+    .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; background: #ccc; border: 1px solid #ccc; }
+    .cell { background: #fff; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; border: none; }
+  </style>
+</head>
+<body>
+
+  <h1>🏝️ 箱庭諸島 × 英単語クイズ</h1>
+
+  <!-- ステータス・ターン表示 -->
+  <div class="card">
+    <div id="turn-info">ターン読み込み中...</div>
+    <div id="player-status"></div>
+  </div>
+
+  <!-- クイズエリア -->
+  <div class="card" id="quiz-card">
+    <h2>📝 ターン開発クイズ (全10問)</h2>
+    <div id="quiz-container">
+      <p id="question">クイズを読み込んでいます...</p>
+      <div id="choices"></div>
+    </div>
+  </div>
+
+  <!-- 島マップ表示エリア -->
+  <div class="card">
+    <h2>🗺️ 自分の島</h2>
+    <div id="map-grid" class="grid"></div>
+  </div>
+
+  <script>
+    // 最新デプロイのWebアプリURL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby4Up8FLPspQGRZGHa6TgUKEGHdahucq3-Y4gntjne1NNzaUowhjGaHcF-gyOGIkO_x/exec";
+
+    let wordsData = [];
+    let currentQuizIndex = 0;
+    let score = 0;
+
+    // クイズデータの読み込み
+    fetch('words.json')
+      .then(res => res.json())
+      .then(data => {
+        wordsData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
+        showQuestion();
+      });
+
+    function showQuestion() {
+      if (currentQuizIndex >= wordsData.length) {
+        finishQuiz();
+        return;
+      }
+      const q = wordsData[currentQuizIndex];
+      document.getElementById('question').innerHTML = `<b>Q${currentQuizIndex + 1}.</b> 「${q.word}」の意味は？`;
+      const choicesDiv = document.getElementById('choices');
+      choicesDiv.innerHTML = '';
+      
+      q.choices.sort(() => 0.5 - Math.random()).forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'btn choice-btn';
+        btn.innerText = choice;
+        btn.onclick = () => {
+          if (choice === q.meaning) score++;
+          currentQuizIndex++;
+          showQuestion();
+        };
+        choicesDiv.appendChild(btn);
+      });
+    }
+
+    function finishQuiz() {
+      const quizCard = document.getElementById('quiz-card');
+      quizCard.innerHTML = `<h3>クイズ終了！</h3><p>結果: 10問中 <b>${score}</b> 問正解</p>`;
+      if (score >= 7) {
+        quizCard.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！</p>`;
+      } else if (score <= 2) {
+        quizCard.innerHTML += `<p style="color:red;">⚠️ クイズ失敗... 島に怪獣が出現するリスクがあります！</p>`;
+      } else {
+        quizCard.innerHTML += `<p style="color:orange;">💤 今ターンは停滞（コマンド実行なし）となります。</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
