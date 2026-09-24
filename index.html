@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>英単語 × 箱庭諸島</title>
+  <title>英単語 × 箱庭諸島 (マルチプレイ版)</title>
   <style>
     body { font-family: sans-serif; background: #eef2f5; margin: 0; padding: 15px; }
     h1 { font-size: 1.2rem; text-align: center; color: #333; margin-bottom: 15px; }
@@ -33,34 +33,19 @@
     .status-item span { display: block; font-weight: bold; color: #1b5e20; font-size: 1rem; }
     
     /* マップ描画エリア */
-    .map-container {
-      overflow-x: auto;
-      background: #4169E1;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-    }
+    .map-container { overflow-x: auto; background: #4169E1; padding: 10px; border-radius: 6px; text-align: center; }
     .grid { display: inline-block; white-space: nowrap; }
     .map-row { display: flex; height: 32px; margin-bottom: 2px; }
     .map-row.even-row { margin-left: 16px; }
     
     .cell {
-      width: 32px;
-      height: 32px;
-      margin-right: 2px;
-      box-sizing: border-box;
-      cursor: pointer;
-      background-size: cover;
-      background-position: center;
-      border: 1px solid rgba(0,0,0,0.15);
-      border-radius: 3px;
-      display: inline-block;
+      width: 32px; height: 32px; margin-right: 2px; box-sizing: border-box;
+      cursor: pointer; background-size: cover; background-position: center;
+      border: 1px solid rgba(0,0,0,0.15); border-radius: 3px; display: inline-block;
     }
     .cell.selected {
-      border: 2px solid #FF0000 !important;
-      box-shadow: 0 0 5px #FF0000;
-      transform: scale(1.1);
-      z-index: 10;
+      border: 2px solid #FF0000 !important; box-shadow: 0 0 5px #FF0000;
+      transform: scale(1.1); z-index: 10;
     }
 
     select, input { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
@@ -73,54 +58,33 @@
     #register-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 20px; border-radius: 8px; width: 85%; max-width: 400px; text-align: center; }
 
-    .beginner-badge {
-      background: #e8f5e9;
-      border: 2px solid #4caf50;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      text-align: center;
-    }
+    .beginner-badge { background: #e8f5e9; border: 2px solid #4caf50; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; }
     .turns-count { font-size: 1.4rem; color: #2e7d32; font-weight: bold; }
     .error-msg { color: #d9534f; font-size: 0.85rem; margin-top: 5px; display: none; }
 
     /* コマンド履歴リストスタイル */
-    .command-list {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0 0 0;
-    }
-    .command-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f8f9fa;
-      border: 1px solid #e0e0e0;
-      padding: 8px 12px;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      font-size: 0.85rem;
-    }
+    .command-list { list-style: none; padding: 0; margin: 10px 0 0 0; }
+    .command-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border: 1px solid #e0e0e0; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; }
   </style>
 </head>
 <body>
 
-  <h1>🏝️ 箱庭諸島 × 英単語クイズ</h1>
+  <h1>🏝️ 英単語 × 箱庭諸島 (マルチプレイ)</h1>
 
   <!-- 初回登録モーダル -->
   <div id="register-modal" style="display: none;">
     <div class="modal-content">
-      <h2>🏆 島主登録（初回建国）</h2>
+      <h2>🏆 島主登録（建国）</h2>
       <p style="font-size: 0.85rem; color: #666;">無人島を発見しました！あなたの島名を入力して建国してください。<br>(初期資金: 100億円 / 初期食料: 1,000トン)</p>
       <input type="text" id="reg-island-name" placeholder="例: ひまわり島">
       <div id="reg-error" class="error-msg"></div>
-      <button class="btn" id="reg-btn" onclick="registerIsland()">島をランダム生成して建国する</button>
+      <button class="btn" id="reg-btn" onclick="registerIsland()">島を生成して建国する</button>
     </div>
   </div>
 
-  <!-- ランキング -->
+  <!-- 全島順位・一覧表 -->
   <div class="card">
-    <h2>🏆 箱庭諸島 ランキング</h2>
+    <h2>🏆 諸島ランキング</h2>
     <table id="ranking-table">
       <thead>
         <tr>
@@ -131,25 +95,27 @@
         </tr>
       </thead>
       <tbody id="ranking-list">
-        <tr><td colspan="4">ランキング読み込み中...</td></tr>
+        <tr><td colspan="4">読み込み中...</td></tr>
       </tbody>
     </table>
   </div>
 
-  <!-- 自分の島マップ＆ステータス -->
+  <!-- マップ表示エリア（他島切り替え対応） -->
   <div class="card">
-    <h2>🗺️ <span id="my-island-title">マイ島</span> の開発画面</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h2 style="margin: 0;">🗺️ 島マップ</h2>
+      <select id="island-selector" onchange="switchIslandView()" style="width: auto; margin: 0;">
+        <option value="">読み込み中...</option>
+      </select>
+    </div>
     
     <div class="status-panel">
       <div class="status-item">人口<span id="st-pop">500人</span></div>
       <div class="status-item">資金<span id="st-money">100億円</span></div>
       <div class="status-item">食料<span id="st-food">1,000トン</span></div>
-      <div class="status-item">農場<span id="st-farm">50人規模</span></div>
-      <div class="status-item">鉱山<span id="st-mine">0箇所</span></div>
-      <div class="status-item">工場<span id="st-factory">0人規模</span></div>
     </div>
 
-    <p style="font-size: 0.8rem; color: #666; margin:0 0 8px 0;">マス目をタップして開発場所を選択してください。</p>
+    <p style="font-size: 0.8rem; color: #666; margin:0 0 8px 0;">マス目をタップして目標座標を選択してください。</p>
     
     <div class="map-container">
       <div id="map-grid" class="grid"></div>
@@ -157,7 +123,7 @@
     <div class="coords-display" id="coords-text">選択座標: X: 0, Y: 0 (平地)</div>
   </div>
 
-  <!-- クイズ ＆ コマンド送信 -->
+  <!-- クイズ ＆ 指示送信 -->
   <div class="card" id="action-card">
     <div id="beginner-notice" class="beginner-badge" style="display:none;">
       🔰 <b>コマンド実行可能</b><br>
@@ -173,41 +139,38 @@
     </div>
 
     <div id="command-form" style="display: none;">
-      <h3 style="margin-top: 0;">🚀 開発指示の送信</h3>
+      <h3 style="margin-top: 0;">🚀 開発・援助・攻撃の送信</h3>
+      <p id="target-display" style="font-size: 0.85rem; color: #008CBA; font-weight: bold; margin-bottom: 5px;">送信対象: マイ島</p>
       <label style="display: block;">実行コマンド:</label>
       <select id="command-type">
-        <optgroup label="🌱 産業開発（バランス開発が必要）">
-          <option value="農場整備">農場整備 (資金: 20億円 / 人口維持・食料供給)</option>
-          <option value="鉱山採掘">鉱山採掘 (資金: 30億円 / 資材供給・工場の稼働に必須)</option>
-          <option value="工場建設">工場建設 (資金: 50億円 / 毎ターン+100億円 ※要資材)</option>
-          <option value="油田採掘">油田採掘 (資金: 1000億円 / 巨大エネルギー財源)</option>
-        </optgroup>
-        <optgroup label="🏗️ 地形変更・インフラ">
+        <optgroup label="🌱 自島開発（自分の島を選択中に有効）">
+          <option value="農場整備">農場整備 (資金: 20億円)</option>
+          <option value="鉱山採掘">鉱山採掘 (資金: 30億円)</option>
+          <option value="工場建設">工場建設 (資金: 50億円)</option>
+          <option value="油田採掘">油田採掘 (資金: 1000億円)</option>
           <option value="整地">整地 (資金: 5億円)</option>
           <option value="浅瀬埋め立て">浅瀬埋め立て (資金: 15億円)</option>
-          <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
-          <option value="海底ミサイル基地建設">海底ミサイル基地建設 (資金: 150億円)</option>
-          <option value="防空基地建設">防空基地建設 (資金: 100億円)</option>
-          <option value="モノリス建設">モノリス建設 (資金: 300億円)</option>
         </optgroup>
-        <optgroup label="⚔️ 攻撃・特殊">
+        <optgroup label="🤝 他島への援助（相手の島を選択して送信）">
+          <option value="食料援助">食料援助 (食料500トンを贈る)</option>
+          <option value="資金援助">資金援助 (資金50億円を贈る)</option>
+        </optgroup>
+        <optgroup label="⚔️ 他島への攻撃（相手の島・座標を指定して送信）">
           <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
-          <option value="モノリス発射">モノリス発射 (資金: 100億円)</option>
         </optgroup>
       </select>
 
-      <button class="btn" onclick="submitCommand()">選択したマス(座標)へコマンドを送信</button>
+      <button class="btn" onclick="submitCommand()">選択中の島・座標へコマンドを予約送信</button>
       <p id="submit-status" style="font-weight:bold; color:blue;"></p>
     </div>
 
-    <!-- 予約済みコマンドの確認・編集エリア -->
+    <!-- 予約済みコマンドの確認・取り消しエリア -->
     <div id="command-queue-card" style="margin-top: 20px;">
-      <h3 style="margin-bottom: 8px; font-size: 1rem;">📋 送信済み（実行待ち）コマンド一覧</h3>
+      <h3 style="margin-bottom: 8px; font-size: 1rem;">📋 送信済み（予約）コマンド一覧</h3>
       <div id="queue-empty" style="font-size: 0.85rem; color: #888;">送信済みのコマンドはありません。</div>
       <ul id="command-queue-list" class="command-list"></ul>
     </div>
 
-    <!-- リセットボタン -->
     <hr style="margin-top: 25px; border: 0; border-top: 1px solid #eee;">
     <button class="btn btn-danger" onclick="deleteMyIsland()">💣 マイ島をリセット（削除）する</button>
   </div>
@@ -216,21 +179,11 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycby4Up8FLPspQGRZGHa6TgUKEGHdahucq3-Y4gntjne1NNzaUowhjGaHcF-gyOGIkO_x/exec";
 
     const LAND_IMAGES = {
-      sea: "./image/land0.gif",
-      waste: "./image/land1.gif",
-      plains: "./image/land2.gif",
-      town: "./image/land3.gif",
-      shallow: "./image/land4.gif",
-      forest: "./image/land6.gif",
-      farm: "./image/land7.gif",
-      factory: "./image/land8.gif",
-      base: "./image/land9.gif",
-      defence: "./image/land10.gif",
-      monolith: "./image/land11.gif",
-      mountain: "./image/land12.gif",
-      monster: "./image/land13.gif",
-      seaCity: "./image/land14.gif",
-      oil: "./image/land15.gif"
+      sea: "./image/land0.gif", waste: "./image/land1.gif", plains: "./image/land2.gif",
+      town: "./image/land3.gif", shallow: "./image/land4.gif", forest: "./image/land6.gif",
+      farm: "./image/land7.gif", factory: "./image/land8.gif", base: "./image/land9.gif",
+      defence: "./image/land10.gif", monolith: "./image/land11.gif", mountain: "./image/land12.gif",
+      monster: "./image/land13.gif", seaCity: "./image/land14.gif", oil: "./image/land15.gif"
     };
 
     const LAND_NAMES = {
@@ -240,129 +193,94 @@
       mountain: "山", monster: "怪獣", seaCity: "海底基地", oil: "油田"
     };
 
-    let islandMap = [];
+    let allIslandsData = [];
+    let currentViewingIsland = null;
     let wordsData = [];
     let currentQuizIndex = 0;
     let score = 0;
-    let selectedX = 0;
-    let selectedY = 0;
+    let selectedX = 0, selectedY = 0;
 
     let myIslandName = localStorage.getItem("hakoniwa_island_name");
     let availableCommands = parseInt(localStorage.getItem("hakoniwa_available_commands") || "5");
     let commandQueue = JSON.parse(localStorage.getItem("hakoniwa_command_queue") || "[]");
 
-    window.onload = () => {
-      loadRanking();
+    window.onload = async () => {
+      await fetchAllIslands();
 
       if (!myIslandName) {
         document.getElementById("register-modal").style.display = "flex";
       } else {
-        document.getElementById("my-island-title").innerText = myIslandName;
-        loadSavedMap();
         setupTurnMode();
         renderCommandQueue();
       }
     };
 
-    async function registerIsland() {
-      const inputName = document.getElementById("reg-island-name").value.trim();
-      const errorDiv = document.getElementById("reg-error");
-      const regBtn = document.getElementById("reg-btn");
-
-      errorDiv.style.display = "none";
-
-      if (!inputName) {
-        errorDiv.innerText = "島名を入力してください。";
-        errorDiv.style.display = "block";
-        return;
-      }
-
-      regBtn.disabled = true;
-      regBtn.innerText = "確認中...";
-
+    async function fetchAllIslands() {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`${GAS_URL}?action=getAllIslands`);
+        allIslandsData = await res.json();
 
-        const response = await fetch(`${GAS_URL}?action=checkName&name=${encodeURIComponent(inputName)}`, {
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        const data = await response.json();
-
-        if (data.exists) {
-          errorDiv.innerText = "その島名はすでに使われています。別の名前を入力してください。";
-          errorDiv.style.display = "block";
-          regBtn.disabled = false;
-          regBtn.innerText = "島をランダム生成して建国する";
-          return;
-        }
-      } catch (e) {}
-
-      myIslandName = inputName;
-      availableCommands = 5;
-      commandQueue = [];
-      localStorage.setItem("hakoniwa_island_name", myIslandName);
-      localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
-      localStorage.setItem("hakoniwa_command_queue", JSON.stringify(commandQueue));
-
-      generateRandomIsland();
-      
-      document.getElementById("register-modal").style.display = "none";
-      document.getElementById("my-island-title").innerText = myIslandName;
-      regBtn.disabled = false;
-      regBtn.innerText = "島をランダム生成して建国する";
-      setupTurnMode();
-      renderCommandQueue();
-      loadRanking();
+        updateRankingUI();
+        updateSelectorUI();
+      } catch (e) {
+        console.error("データ取得エラー", e);
+      }
     }
 
-    function generateRandomIsland() {
-      islandMap = Array.from({ length: 12 }, () => Array(12).fill("sea"));
-
-      for (let y = 1; y <= 10; y++) {
-        for (let x = 1; x <= 10; x++) {
-          if (x === 1 || x === 10 || y === 1 || y === 10) {
-            if (Math.random() < 0.40) {
-              islandMap[y][x] = "shallow";
-            }
-          }
-        }
-      }
-
-      for (let y = 2; y <= 9; y++) {
-        for (let x = 2; x <= 9; x++) {
-          const rand = Math.random();
-          if (rand < 0.45) islandMap[y][x] = "plains";
-          else if (rand < 0.65) islandMap[y][x] = "waste";
-          else if (rand < 0.85) islandMap[y][x] = "forest";
-          else if (rand < 0.95) islandMap[y][x] = "mountain";
-          else islandMap[y][x] = "sea";
-        }
-      }
-
-      islandMap[5][5] = "town";
-      islandMap[5][6] = "farm";
-
-      localStorage.setItem("hakoniwa_map_data", JSON.stringify(islandMap));
-      renderMap();
-    }
-
-    function loadSavedMap() {
-      const savedMap = localStorage.getItem("hakoniwa_map_data");
-      if (savedMap) {
-        islandMap = JSON.parse(savedMap);
-      } else {
-        generateRandomIsland();
+    function updateRankingUI() {
+      const list = document.getElementById("ranking-list");
+      if (!allIslandsData || allIslandsData.length === 0) {
+        list.innerHTML = `<tr><td colspan="4">登録されている島がありません。</td></tr>`;
         return;
       }
-      renderMap();
+
+      list.innerHTML = allIslandsData.map((isl, idx) => `
+        <tr>
+          <td><b>${idx + 1}</b></td>
+          <td>${isl.name}${isl.name === myIslandName ? " (自分)" : ""}</td>
+          <td>${isl.pop || 500}人</td>
+          <td>${isl.money || 100}億円</td>
+        </tr>
+      `).join("");
     }
 
-    function renderMap() {
+    function updateSelectorUI() {
+      const selector = document.getElementById("island-selector");
+      selector.innerHTML = "";
+
+      allIslandsData.forEach(isl => {
+        const opt = document.createElement("option");
+        opt.value = isl.name;
+        opt.innerText = isl.name + (isl.name === myIslandName ? " (マイ島)" : "");
+        selector.appendChild(opt);
+      });
+
+      if (!currentViewingIsland && allIslandsData.length > 0) {
+        currentViewingIsland = myIslandName || allIslandsData[0].name;
+      }
+      selector.value = currentViewingIsland;
+      switchIslandView();
+    }
+
+    function switchIslandView() {
+      const selectedName = document.getElementById("island-selector").value;
+      currentViewingIsland = selectedName;
+      const island = allIslandsData.find(i => i.name === selectedName);
+
+      document.getElementById("target-display").innerText = `送信対象: ${currentViewingIsland}` + (currentViewingIsland === myIslandName ? " (自島)" : " (他島)");
+
+      if (island) {
+        document.getElementById("st-pop").innerText = (island.pop || 500) + "人";
+        document.getElementById("st-money").innerText = (island.money || 100) + "億円";
+        document.getElementById("st-food").innerText = (island.food || 1000) + "トン";
+        renderMap(island.map);
+      }
+    }
+
+    function renderMap(mapData) {
       const mapGrid = document.getElementById('map-grid');
       mapGrid.innerHTML = '';
+      if (!mapData || mapData.length === 0) return;
 
       for (let y = 0; y < 12; y++) {
         const rowDiv = document.createElement('div');
@@ -371,30 +289,91 @@
         for (let x = 0; x < 12; x++) {
           const cell = document.createElement('div');
           cell.className = 'cell';
-          const type = islandMap[y][x] || "sea";
+          const type = mapData[y][x] || "sea";
 
           cell.style.backgroundImage = `url(${LAND_IMAGES[type]})`;
-          cell.dataset.x = x;
-          cell.dataset.y = y;
           cell.dataset.type = type;
 
-          if (x === selectedX && y === selectedY) {
-            cell.classList.add('selected');
-          }
+          if (x === selectedX && y === selectedY) cell.classList.add('selected');
 
-          cell.onclick = () => selectCell(cell, x, y, type);
+          cell.onclick = () => {
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+            cell.classList.add('selected');
+            selectedX = x;
+            selectedY = y;
+            document.getElementById('coords-text').innerText = `選択座標: X: ${x}, Y: ${y} (${LAND_NAMES[type] || "平地"})`;
+          };
           rowDiv.appendChild(cell);
         }
         mapGrid.appendChild(rowDiv);
       }
     }
 
-    function selectCell(cell, x, y, type) {
-      document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-      cell.classList.add('selected');
-      selectedX = x;
-      selectedY = y;
-      document.getElementById('coords-text').innerText = `選択座標: X: ${x}, Y: ${y} (${LAND_NAMES[type] || "平地"})`;
+    async function registerIsland() {
+      const inputName = document.getElementById("reg-island-name").value.trim();
+      const errorDiv = document.getElementById("reg-error");
+      const regBtn = document.getElementById("reg-btn");
+
+      errorDiv.style.display = "none";
+      if (!inputName) {
+        errorDiv.innerText = "島名を入力してください。";
+        errorDiv.style.display = "block";
+        return;
+      }
+
+      regBtn.disabled = true;
+      regBtn.innerText = "重複確認中...";
+
+      try {
+        const checkRes = await fetch(`${GAS_URL}?action=checkName&name=${encodeURIComponent(inputName)}`);
+        const checkData = await checkRes.json();
+        if (checkData.exists) {
+          errorDiv.innerText = "すでに使用されている島名です。別の名前を入力してください。";
+          errorDiv.style.display = "block";
+          regBtn.disabled = false;
+          regBtn.innerText = "島を生成して建国する";
+          return;
+        }
+      } catch (e) {}
+
+      // ランダム初期マップ作成
+      const newMap = Array.from({ length: 12 }, () => Array(12).fill("sea"));
+      for (let y = 2; y <= 9; y++) {
+        for (let x = 2; x <= 9; x++) {
+          const rand = Math.random();
+          if (rand < 0.50) newMap[y][x] = "plains";
+          else if (rand < 0.70) newMap[y][x] = "waste";
+          else if (rand < 0.90) newMap[y][x] = "forest";
+          else newMap[y][x] = "mountain";
+        }
+      }
+      newMap[5][5] = "town";
+      newMap[5][6] = "farm";
+
+      myIslandName = inputName;
+      availableCommands = 5;
+      commandQueue = [];
+
+      localStorage.setItem("hakoniwa_island_name", myIslandName);
+      localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
+      localStorage.setItem("hakoniwa_command_queue", JSON.stringify(commandQueue));
+
+      await fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "registerIsland",
+          playerName: myIslandName,
+          map: newMap
+        })
+      });
+
+      document.getElementById("register-modal").style.display = "none";
+      regBtn.disabled = false;
+      regBtn.innerText = "島を生成して建国する";
+
+      await fetchAllIslands();
+      setupTurnMode();
+      renderCommandQueue();
     }
 
     function setupTurnMode() {
@@ -418,49 +397,6 @@
       score = 0;
       loadQuiz();
       window.scrollTo({ top: document.getElementById("quiz-container").offsetTop, behavior: 'smooth' });
-    }
-
-    function loadRanking() {
-      const rankingList = document.getElementById("ranking-list");
-      
-      fetch(`${GAS_URL}?action=getRanking`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            rankingList.innerHTML = data.map((d, index) => `
-              <tr>
-                <td><b>${index + 1}</b></td>
-                <td>${d.name}</td>
-                <td>${d.pop || "500人"}</td>
-                <td>${d.money || "100億円"}</td>
-              </tr>
-            `).join("");
-          } else {
-            fallbackRanking();
-          }
-        })
-        .catch(() => fallbackRanking());
-    }
-
-    function fallbackRanking() {
-      const rankingList = document.getElementById("ranking-list");
-      const dummyData = [
-        { rank: 1, name: "ひまわり島", pop: "1,200人", money: "300億円" },
-        { rank: 2, name: "わくわく島", pop: "800人", money: "150億円" }
-      ];
-
-      if (myIslandName) {
-        dummyData.unshift({ rank: 1, name: myIslandName, pop: "500人", money: "100億円" });
-      }
-
-      rankingList.innerHTML = dummyData.map((d, idx) => `
-        <tr>
-          <td><b>${idx + 1}</b></td>
-          <td>${d.name}</td>
-          <td>${d.pop}</td>
-          <td>${d.money}</td>
-        </tr>
-      `).join("");
     }
 
     function loadQuiz() {
@@ -502,7 +438,6 @@
       if (score >= 7) {
         availableCommands = Math.min(availableCommands + 1, 10);
         localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
-
         quizContainer.innerHTML += `<p style="color:green;">✨ 7問以上正解！コマンド可能数が1増加しました。（現在: ${availableCommands}回）</p>`;
       } else {
         quizContainer.innerHTML += `<p style="color:orange;">💤 正解数が足りないためコマンド数は増えませんでした。</p>`;
@@ -518,11 +453,13 @@
 
       const cmd = document.getElementById('command-type').value;
       const status = document.getElementById('submit-status');
+      const target = currentViewingIsland || myIslandName;
 
       status.innerText = "送信中...";
 
       const newCmd = {
         id: Date.now(),
+        target: target,
         command: cmd,
         x: selectedX,
         y: selectedY
@@ -535,10 +472,10 @@
         body: JSON.stringify({
           action: "submitCommand",
           playerName: myIslandName,
+          targetIsland: target,
           command: cmd,
           x: selectedX,
-          y: selectedY,
-          score: score
+          y: selectedY
         })
       })
       .then(() => {
@@ -548,11 +485,11 @@
         localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
         localStorage.setItem("hakoniwa_command_queue", JSON.stringify(commandQueue));
 
-        status.innerHTML = `✅ コマンドを送信・予約しました！`;
+        status.innerText = `✅ [${target}] へコマンドを予約しました！`;
         setupTurnMode();
         renderCommandQueue();
       })
-      .catch(err => {
+      .catch(() => {
         status.innerText = "送信エラーが発生しました。";
       });
     }
@@ -560,7 +497,6 @@
     function renderCommandQueue() {
       const queueList = document.getElementById('command-queue-list');
       const emptyNotice = document.getElementById('queue-empty');
-
       queueList.innerHTML = '';
 
       if (commandQueue.length === 0) {
@@ -574,7 +510,7 @@
         const li = document.createElement('li');
         li.className = 'command-item';
         li.innerHTML = `
-          <span><b>#${index + 1}</b> [${item.command}] (X: ${item.x}, Y: ${item.y})</span>
+          <span><b>#${index + 1}</b> [対象: ${item.target}] ${item.command} (X: ${item.x}, Y: ${item.y})</span>
           <button class="btn btn-danger btn-small" onclick="cancelCommand(${item.id})">取り消し</button>
         `;
         queueList.appendChild(li);
@@ -582,7 +518,7 @@
     }
 
     function cancelCommand(id) {
-      if (!confirm("このコマンドを取り消しますか？\n（消費されたコマンド可能数が1手元に戻ります）")) return;
+      if (!confirm("このコマンドを取り消しますか？\n（消費されたコマンド可能数が1戻ります）")) return;
 
       commandQueue = commandQueue.filter(cmd => cmd.id !== id);
       availableCommands++;
@@ -592,21 +528,14 @@
 
       setupTurnMode();
       renderCommandQueue();
-
-      // GAS側にもキャンセル通知を落とす場合はここに非同期リクエストを送信可能
     }
 
     function deleteMyIsland() {
-      const confirmDelete = confirm(`「${myIslandName}」を完全に削除してリセットしますか？\n（この操作は消去されたら元に戻せません）`);
-      
-      if (confirmDelete) {
+      if (confirm(`「${myIslandName}」をリセットしますか？`)) {
         localStorage.removeItem("hakoniwa_island_name");
-        localStorage.removeItem("hakoniwa_map_data");
         localStorage.removeItem("hakoniwa_available_commands");
         localStorage.removeItem("hakoniwa_command_queue");
-        localStorage.removeItem("hakoniwa_play_turns");
-
-        alert("マイ島を削除しました。ページを再読み込みして新しく建国してください。");
+        alert("マイ島を削除しました。");
         location.reload();
       }
     }
