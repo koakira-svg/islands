@@ -16,7 +16,7 @@
     .btn-secondary { background: #008CBA; }
     .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
 
-    /* 本家箱庭風ステータスパネル */
+    /* ステータスパネル */
     .status-panel {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -34,14 +34,14 @@
     /* マップ描画エリア */
     .map-container {
       overflow-x: auto;
-      background: #4169E1; /* 海の色 */
+      background: #4169E1;
       padding: 10px;
       border-radius: 6px;
       text-align: center;
     }
     .grid { display: inline-block; white-space: nowrap; }
     .map-row { display: flex; height: 32px; margin-bottom: 2px; }
-    .map-row.even-row { margin-left: 16px; } /* 偶数行の半分ずらし */
+    .map-row.even-row { margin-left: 16px; }
     
     .cell {
       width: 32px;
@@ -65,12 +65,10 @@
     select, input { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     .coords-display { font-size: 0.9rem; color: #d9534f; font-weight: bold; margin-top: 8px; text-align: center; }
     
-    /* ランキングテーブル */
     table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
     th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background: #f8f9fa; }
 
-    /* モーダル */
     #register-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 20px; border-radius: 8px; width: 85%; max-width: 400px; text-align: center; }
 
@@ -94,7 +92,7 @@
   <div id="register-modal" style="display: none;">
     <div class="modal-content">
       <h2>🏆 島主登録（初回建国）</h2>
-      <p style="font-size: 0.85rem; color: #666;">無人島を発見しました！あなたの島名を入力して建国してください。<br>(初期資金: 1,000億円 / 初期食料: 10,000トン)</p>
+      <p style="font-size: 0.85rem; color: #666;">無人島を発見しました！あなたの島名を入力して建国してください。<br>(初期資金: 100億円 / 初期食料: 1,000トン)</p>
       <input type="text" id="reg-island-name" placeholder="例: ひまわり島">
       <div id="reg-error" class="error-msg"></div>
       <button class="btn" id="reg-btn" onclick="registerIsland()">島をランダム生成して建国する</button>
@@ -124,12 +122,12 @@
     <h2>🗺️ <span id="my-island-title">マイ島</span> の開発画面</h2>
     
     <div class="status-panel">
-      <div class="status-item">人口<span id="st-pop">1,000人</span></div>
-      <div class="status-item">資金<span id="st-money">1,000億円</span></div>
-      <div class="status-item">食料<span id="st-food">10,000トン</span></div>
-      <div class="status-item">農場<span id="st-farm">100人規模</span></div>
+      <div class="status-item">人口<span id="st-pop">500人</span></div>
+      <div class="status-item">資金<span id="st-money">100億円</span></div>
+      <div class="status-item">食料<span id="st-food">1,000トン</span></div>
+      <div class="status-item">農場<span id="st-farm">50人規模</span></div>
+      <div class="status-item">鉱山<span id="st-mine">0箇所</span></div>
       <div class="status-item">工場<span id="st-factory">0人規模</span></div>
-      <div class="status-item">ミサイル基地<span id="st-base">0箇所</span></div>
     </div>
 
     <p style="font-size: 0.8rem; color: #666; margin:0 0 8px 0;">マス目をタップして開発場所を選択してください。</p>
@@ -159,18 +157,21 @@
       <h3 style="margin-top: 0;">🚀 開発指示の送信</h3>
       <label style="display: block;">実行コマンド:</label>
       <select id="command-type">
-        <optgroup label="地形変更・施設建設">
+        <optgroup label="🌱 産業開発（バランス開発が必要）">
+          <option value="農場整備">農場整備 (資金: 20億円 / 人口維持・食料供給)</option>
+          <option value="鉱山採掘">鉱山採掘 (資金: 30億円 / 資材供給・工場の稼働に必須)</option>
+          <option value="工場建設">工場建設 (資金: 50億円 / 毎ターン+100億円 ※要資材)</option>
+          <option value="油田採掘">油田採掘 (資金: 1000億円 / 巨大エネルギー財源)</option>
+        </optgroup>
+        <optgroup label="🏗️ 地形変更・インフラ">
           <option value="整地">整地 (資金: 5億円)</option>
-          <option value="埋め立て">浅瀬埋め立て (資金: 15億円)</option>
-          <option value="農場整備">農場整備 (資金: 20億円)</option>
-          <option value="工場建設">工場建設 (資金: 50億円)</option>
-          <option value="採掘場建設">油田採掘 (資金: 100億円)</option>
+          <option value="浅瀬埋め立て">浅瀬埋め立て (資金: 15億円)</option>
           <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
           <option value="海底ミサイル基地建設">海底ミサイル基地建設 (資金: 150億円)</option>
-          <option value="防衛施設建設">防空基地建設 (資金: 100億円)</option>
+          <option value="防空基地建設">防空基地建設 (資金: 100億円)</option>
           <option value="モノリス建設">モノリス建設 (資金: 300億円)</option>
         </optgroup>
-        <optgroup label="攻撃・特殊コマンド">
+        <optgroup label="⚔️ 攻撃・特殊">
           <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
           <option value="モノリス発射">モノリス発射 (資金: 100億円)</option>
         </optgroup>
@@ -180,7 +181,7 @@
       <p id="submit-status" style="font-weight:bold; color:blue;"></p>
     </div>
 
-    <!-- 本人のみ可能な島削除エリア -->
+    <!-- リセットボタン -->
     <hr style="margin-top: 25px; border: 0; border-top: 1px solid #eee;">
     <button class="btn btn-danger" onclick="deleteMyIsland()">💣 マイ島をリセット（削除）する</button>
   </div>
@@ -219,7 +220,6 @@
     let score = 0;
     let selectedX = 0;
     let selectedY = 0;
-    let registeredIslands = [];
 
     let myIslandName = localStorage.getItem("hakoniwa_island_name");
     let availableCommands = parseInt(localStorage.getItem("hakoniwa_available_commands") || "5");
@@ -253,7 +253,6 @@
       regBtn.innerText = "確認中...";
 
       try {
-        // 5秒タイムアウト付きでGAS照会を行う
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -271,9 +270,7 @@
           regBtn.innerText = "島をランダム生成して建国する";
           return;
         }
-      } catch (e) {
-        // 通信エラーやタイムアウトが発生した場合はそのまま進行できるように制御
-      }
+      } catch (e) {}
 
       myIslandName = inputName;
       availableCommands = 5;
@@ -316,7 +313,6 @@
 
       islandMap[5][5] = "town";
       islandMap[5][6] = "farm";
-      islandMap[6][5] = "factory";
 
       localStorage.setItem("hakoniwa_map_data", JSON.stringify(islandMap));
       renderMap();
@@ -400,13 +396,12 @@
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
-            registeredIslands = data.map(d => d.name);
             rankingList.innerHTML = data.map((d, index) => `
               <tr>
                 <td><b>${index + 1}</b></td>
                 <td>${d.name}</td>
-                <td>${d.pop || "1,000人"}</td>
-                <td>${d.money || "1,000億円"}</td>
+                <td>${d.pop || "500人"}</td>
+                <td>${d.money || "100億円"}</td>
               </tr>
             `).join("");
           } else {
@@ -419,15 +414,14 @@
     function fallbackRanking() {
       const rankingList = document.getElementById("ranking-list");
       const dummyData = [
-        { rank: 1, name: "ひまわり島", pop: "1,200人", money: "1,100億円" },
-        { rank: 2, name: "わくわく島", pop: "800人", money: "850億円" }
+        { rank: 1, name: "ひまわり島", pop: "1,200人", money: "300億円" },
+        { rank: 2, name: "わくわく島", pop: "800人", money: "150億円" }
       ];
 
       if (myIslandName) {
-        dummyData.unshift({ rank: 1, name: myIslandName, pop: "1,000人", money: "1,000億円" });
+        dummyData.unshift({ rank: 1, name: myIslandName, pop: "500人", money: "100億円" });
       }
 
-      registeredIslands = dummyData.map(d => d.name);
       rankingList.innerHTML = dummyData.map((d, idx) => `
         <tr>
           <td><b>${idx + 1}</b></td>
