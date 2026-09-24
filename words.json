@@ -1,0 +1,107 @@
+[
+  {
+    "id": 1,
+    "word": "arrive",
+    "meaning": "到着する",
+    "choices": ["到着する", "出発する", "招待する", "説明する"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 2,
+    "word": "borrow",
+    "meaning": "〜を借りる",
+    "choices": ["〜を借りる", "〜を貸す", "〜を買う", "〜を運ぶ"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 3,
+    "word": "collect",
+    "meaning": "〜を集める",
+    "choices": ["〜を集める", "〜を選ぶ", "〜を守る", "〜を捨てる"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 4,
+    "word": "describe",
+    "meaning": "〜を説明する・描写する",
+    "choices": ["〜を説明する・描写する", "〜を心配する", "〜を発見する", "〜を準備する"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 5,
+    "word": "foreign",
+    "meaning": "外国の",
+    "choices": ["外国の", "有名な", "珍しい", "伝統的な"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 6,
+    "word": "improve",
+    "meaning": "〜を向上させる・よくなる",
+    "choices": ["〜を向上させる・よくなる", "〜を承認する", "〜を証明する", "〜を増やす"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 7,
+    "word": "invite",
+    "meaning": "〜を招待する",
+    "choices": ["〜を招待する", "〜を訪問する", "〜を断る", "〜を提案する"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 8,
+    "word": "neighbor",
+    "meaning": "近所の人・隣人",
+    "choices": ["近所の人・隣人", "親戚", "同僚", "観光客"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 9,
+    "word": "prepare",
+    "meaning": "〜を準備する",
+    "choices": ["〜を準備する", "〜を比較する", "〜を保護する", "〜を修理する"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 10,
+    "word": "protect",
+    "meaning": "〜を保護する・守る",
+    "choices": ["〜を保護する・守る", "〜を攻撃する", "〜を予測する", "〜を発見する"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 11,
+    "word": "receive",
+    "meaning": "〜を受け取る",
+    "choices": ["〜を受け取る", "〜を送る", "〜を返す", "〜を信じる"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 12,
+    "word": "refuse",
+    "meaning": "〜を断る",
+    "choices": ["〜を断る", "〜を許す", "〜を約束する", "〜を好む"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 13,
+    "word": "several",
+    "meaning": "いくつかの・数個の",
+    "choices": ["いくつかの・数個の", "すべての", "ほとんどの", "わずかな"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 14,
+    "word": "useful",
+    "meaning": "役に立つ・便利な",
+    "choices": ["役に立つ・便利な", "危険な", "必要な", "複雑な"],
+    "level": "junior1_2"
+  },
+  {
+    "id": 15,
+    "word": "valuable",
+    "meaning": "価値のある・貴重な",
+    "choices": ["価値のある・貴重な", "安価な", "一般的な", "不可欠な"],
+    "level": "junior1_2"
+  }
+]
