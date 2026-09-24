@@ -11,6 +11,9 @@
     .btn { background: #4CAF50; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 1rem; margin-top: 8px; cursor: pointer; }
     .btn:active { background: #45a049; }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-danger { background: #d9534f; margin-top: 15px; }
+    .btn-danger:active { background: #c9302c; }
+    .btn-secondary { background: #008CBA; }
     .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
 
     /* 本家箱庭風ステータスパネル */
@@ -140,13 +143,14 @@
   <!-- クイズ ＆ コマンド送信 -->
   <div class="card" id="action-card">
     <div id="beginner-notice" class="beginner-badge" style="display:none;">
-      🔰 <b>初心者保護期間中</b><br>
-      クイズ免除の残りコマンド可能数: <span class="turns-count" id="turns-left">5</span> 回
+      🔰 <b>コマンド実行可能</b><br>
+      残りコマンド可能数: <span class="turns-count" id="turns-left">5</span> 回
+      <button class="btn btn-secondary" onclick="startQuizManually()" style="margin-top: 10px;">📝 英単語クイズで可能数を増やす (+1回)</button>
     </div>
 
-    <div id="quiz-container">
+    <div id="quiz-container" style="display: none;">
       <h2>📝 ターン開発クイズ (全10問)</h2>
-      <p style="font-size: 0.85rem; color: #555;">※7問以上正解で開発指示が解禁されます！</p>
+      <p style="font-size: 0.85rem; color: #555;">※7問以上正解でコマンド可能数が+1増えます！</p>
       <p id="question">クイズを読み込んでいます...</p>
       <div id="choices"></div>
     </div>
@@ -168,6 +172,10 @@
       <button class="btn" onclick="submitCommand()">選択したマス(座標)へコマンドを送信</button>
       <p id="submit-status" style="font-weight:bold; color:blue;"></p>
     </div>
+
+    <!-- 本人のみ可能な島削除エリア -->
+    <hr style="margin-top: 25px; border: 0; border-top: 1px solid #eee;">
+    <button class="btn btn-danger" onclick="deleteMyIsland()">💣 マイ島をリセット（削除）する</button>
   </div>
 
   <script>
@@ -207,7 +215,8 @@
     let registeredIslands = [];
 
     let myIslandName = localStorage.getItem("hakoniwa_island_name");
-    let playTurns = parseInt(localStorage.getItem("hakoniwa_play_turns") || "0");
+    // 残りコマンド可能数を保持 (デフォルト初期値5回)
+    let availableCommands = parseInt(localStorage.getItem("hakoniwa_available_commands") || "5");
 
     window.onload = () => {
       loadRanking();
@@ -254,13 +263,12 @@
           regBtn.innerText = "島をランダム生成して建国する";
           return;
         }
-      } catch (e) {
-      }
+      } catch (e) {}
 
       myIslandName = inputName;
+      availableCommands = 5;
       localStorage.setItem("hakoniwa_island_name", myIslandName);
-      localStorage.setItem("hakoniwa_play_turns", "0");
-      playTurns = 0;
+      localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
 
       generateRandomIsland();
       
@@ -272,7 +280,6 @@
       loadRanking();
     }
 
-    // 初期マップ生成（浅瀬のみを配置）
     function generateRandomIsland() {
       islandMap = Array.from({ length: 12 }, () => Array(12).fill("sea"));
 
@@ -354,19 +361,26 @@
     }
 
     function setupTurnMode() {
-      const remainingTurns = 5 - playTurns;
+      document.getElementById("turns-left").innerText = availableCommands;
 
-      if (remainingTurns > 0) {
+      if (availableCommands > 0) {
         document.getElementById("beginner-notice").style.display = "block";
-        document.getElementById("turns-left").innerText = remainingTurns;
-        document.getElementById("quiz-container").style.display = "none";
         document.getElementById("command-form").style.display = "block";
+        document.getElementById("quiz-container").style.display = "none";
       } else {
         document.getElementById("beginner-notice").style.display = "none";
-        document.getElementById("quiz-container").style.display = "block";
         document.getElementById("command-form").style.display = "none";
+        document.getElementById("quiz-container").style.display = "block";
         loadQuiz();
       }
+    }
+
+    function startQuizManually() {
+      document.getElementById("quiz-container").style.display = "block";
+      currentQuizIndex = 0;
+      score = 0;
+      loadQuiz();
+      window.scrollTo({ top: document.getElementById("quiz-container").offsetTop, behavior: 'smooth' });
     }
 
     function loadRanking() {
@@ -451,14 +465,22 @@
       quizContainer.innerHTML = `<h3>クイズ終了！</h3><p>結果: 10問中 <b>${score}</b> 問正解</p>`;
       
       if (score >= 7) {
-        quizContainer.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！</p>`;
-        document.getElementById('command-form').style.display = 'block';
+        availableCommands = Math.min(availableCommands + 1, 10);
+        localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
+
+        quizContainer.innerHTML += `<p style="color:green;">✨ 7問以上正解！コマンド可能数が1増加しました。（現在: ${availableCommands}回）</p>`;
       } else {
-        quizContainer.innerHTML += `<p style="color:orange;">💤 正解数が足りないため今ターンは開発できません。</p>`;
+        quizContainer.innerHTML += `<p style="color:orange;">💤 正解数が足りないためコマンド数は増えませんでした。</p>`;
       }
+      setupTurnMode();
     }
 
     function submitCommand() {
+      if (availableCommands <= 0) {
+        alert("コマンド可能数が足りません。クイズに答えて追加してください。");
+        return;
+      }
+
       const cmd = document.getElementById('command-type').value;
       const status = document.getElementById('submit-status');
 
@@ -474,12 +496,12 @@
           command: cmd,
           x: selectedX,
           y: selectedY,
-          score: (playTurns < 5) ? 10 : score
+          score: score
         })
       })
       .then(() => {
-        playTurns++;
-        localStorage.setItem("hakoniwa_play_turns", playTurns.toString());
+        availableCommands--;
+        localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
 
         status.innerHTML = `✅ コマンドを送信しました！<br>（指示: [${cmd}] 座標: X=${selectedX}, Y=${selectedY}）`;
         setupTurnMode();
@@ -487,6 +509,21 @@
       .catch(err => {
         status.innerText = "送信エラーが発生しました。";
       });
+    }
+
+    // 自分の島を削除（リセット）する処理
+    function deleteMyIsland() {
+      const confirmDelete = confirm(`「${myIslandName}」を完全に削除してリセットしますか？\n（この操作は消去されたら元に戻せません）`);
+      
+      if (confirmDelete) {
+        localStorage.removeItem("hakoniwa_island_name");
+        localStorage.removeItem("hakoniwa_map_data");
+        localStorage.removeItem("hakoniwa_available_commands");
+        localStorage.removeItem("hakoniwa_play_turns");
+
+        alert("マイ島を削除しました。ページを再読み込みして新しく建国してください。");
+        location.reload();
+      }
     }
   </script>
 </body>
