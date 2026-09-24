@@ -11,44 +11,55 @@
     .btn { background: #4CAF50; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 1rem; margin-top: 8px; cursor: pointer; }
     .btn:active { background: #45a049; }
     .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
-    .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; background: #ccc; border: 1px solid #ccc; }
-    .cell { background: #fff; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; border: none; }
+    
+    /* 12x12の島マップ用スタイル */
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; background: #87CEEB; padding: 4px; border-radius: 4px; }
+    .cell { background: #90EE90; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; user-select: none; }
+    .cell.selected { border: 2px solid #FF0000; font-weight: bold; background: #FFE4E1; }
+    
     select, input { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     #command-form { display: none; margin-top: 15px; border-top: 2px dashed #ddd; padding-top: 15px; }
+    .coords-display { font-size: 0.9rem; color: #d9534f; font-weight: bold; margin-top: 5px; }
   </style>
 </head>
 <body>
 
   <h1>🏝️ 箱庭諸島 × 英単語クイズ</h1>
 
-  <!-- クイズ ＆ コマンド入力エリア -->
+  <!-- クイズエリア -->
   <div class="card" id="quiz-card">
     <h2>📝 ターン開発クイズ (全10問)</h2>
     <div id="quiz-container">
       <p id="question">クイズを読み込んでいます...</p>
       <div id="choices"></div>
     </div>
+  </div>
 
-    <!-- 7問以上正解で表示されるコマンド入力フォーム -->
-    <div id="command-form">
-      <h3>🚀 コマンドを入力して送信</h3>
-      <label>島名（プレイヤー名）:</label>
-      <input type="text" id="player-name" placeholder="例: ひまわり島">
+  <!-- 開発コマンド入力エリア（クイズ成功で開く） -->
+  <div class="card" id="command-form">
+    <h2>🛠️ 島の開発コマンド</h2>
+    
+    <label>島名（プレイヤー名）:</label>
+    <input type="text" id="player-name" placeholder="例: ひまわり島">
 
-      <label>実行コマンド:</label>
-      <select id="command-type">
-        <option value="整地">整地 (資金: 5億円)</option>
-        <option value="農場建設">農場建設 (資金: 20億円)</option>
-        <option value="工場建設">工場建設 (資金: 50億円)</option>
-        <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
-        <option value="偽装基地建設">偽装基地建設 (資金: 80億円)</option>
-        <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
-        <option value="PPミサイル発射">PPミサイル発射 (資金: 50億円)</option>
-      </select>
+    <h3>🗺️ 開拓開発エリア (12×12)</h3>
+    <p style="font-size: 0.8rem; color: #666;">マス目をタップして開発場所（座標）を選んでください。</p>
+    <div id="map-grid" class="grid"></div>
+    <div class="coords-display" id="coords-text">選択座標: X: 0, Y: 0</div>
 
-      <button class="btn" onclick="submitCommand()">コマンドを確定して送信</button>
-      <p id="submit-status" style="font-weight:bold; color:blue;"></p>
-    </div>
+    <label style="margin-top: 15px; display: block;">実行コマンド:</label>
+    <select id="command-type">
+      <option value="整地">整地 (資金: 5億円)</option>
+      <option value="農場建設">農場建設 (資金: 20億円)</option>
+      <option value="工場建設">工場建設 (資金: 50億円)</option>
+      <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
+      <option value="偽装基地建設">偽装基地建設 (資金: 80億円)</option>
+      <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
+      <option value="PPミサイル発射">PPミサイル発射 (資金: 50億円)</option>
+    </select>
+
+    <button class="btn" onclick="submitCommand()">コマンドを確定して送信</button>
+    <p id="submit-status" style="font-weight:bold; color:blue;"></p>
   </div>
 
   <script>
@@ -57,6 +68,8 @@
     let wordsData = [];
     let currentQuizIndex = 0;
     let score = 0;
+    let selectedX = 0;
+    let selectedY = 0;
 
     // クイズデータの読み込み
     fetch('words.json')
@@ -65,6 +78,31 @@
         wordsData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
         showQuestion();
       });
+
+    // 12x12の島マップグリッドを作成
+    function initMap() {
+      const mapGrid = document.getElementById('map-grid');
+      mapGrid.innerHTML = '';
+      for (let y = 0; y < 12; y++) {
+        for (let x = 0; x < 12; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.innerText = '平'; // 初期表示：平地
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          cell.onclick = () => selectCell(cell, x, y);
+          mapGrid.appendChild(cell);
+        }
+      }
+    }
+
+    function selectCell(cell, x, y) {
+      document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
+      selectedX = x;
+      selectedY = y;
+      document.getElementById('coords-text').innerText = `選択座標: X: ${x}, Y: ${y}`;
+    }
 
     function showQuestion() {
       if (currentQuizIndex >= wordsData.length) {
@@ -94,8 +132,9 @@
       quizContainer.innerHTML = `<h3>クイズ終了！</h3><p>結果: 10問中 <b>${score}</b> 問正解</p>`;
       
       if (score >= 7) {
-        quizContainer.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！下のフォームから指示を出してください。</p>`;
-        document.getElementById('command-form').style.display = 'block'; // フォームを表示
+        quizContainer.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！下のマップから開発を行ってください。</p>`;
+        document.getElementById('command-form').style.display = 'block';
+        initMap(); // マップを生成
       } else if (score <= 2) {
         quizContainer.innerHTML += `<p style="color:red;">⚠️ クイズ失敗... 島に怪獣が出現するリスクがあります！</p>`;
       } else {
@@ -124,11 +163,13 @@
           action: "submitCommand",
           playerName: name,
           command: cmd,
+          x: selectedX,
+          y: selectedY,
           score: score
         })
       })
       .then(() => {
-        status.innerHTML = "✅ コマンドを送信しました！<br>次回の更新ターン（6時間ごと）に実行されます。";
+        status.innerHTML = `✅ コマンドを送信しました！<br>（指示: [${cmd}] 座標: X=${selectedX}, Y=${selectedY}）<br>次回の更新ターン（6時間ごと）に自動実行されます。`;
       })
       .catch(err => {
         status.innerText = "送信エラーが発生しました。";
