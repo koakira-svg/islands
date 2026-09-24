@@ -6,60 +6,118 @@
   <title>英単語 × 箱庭諸島</title>
   <style>
     body { font-family: sans-serif; background: #eef2f5; margin: 0; padding: 15px; }
-    h1 { font-size: 1.2rem; text-align: center; color: #333; }
+    h1 { font-size: 1.2rem; text-align: center; color: #333; margin-bottom: 15px; }
     .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
     .btn { background: #4CAF50; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 1rem; margin-top: 8px; cursor: pointer; }
     .btn:active { background: #45a049; }
     .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
     
     /* 12x12の島マップ用スタイル */
-    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; background: #87CEEB; padding: 4px; border-radius: 4px; }
-    .cell { background: #90EE90; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; user-select: none; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; background: #87CEEB; padding: 4px; border-radius: 4px; margin-top: 10px; }
+    .cell { background: #90EE90; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; user-select: none; }
     .cell.selected { border: 2px solid #FF0000; font-weight: bold; background: #FFE4E1; }
     
     select, input { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    #command-form { display: none; margin-top: 15px; border-top: 2px dashed #ddd; padding-top: 15px; }
     .coords-display { font-size: 0.9rem; color: #d9534f; font-weight: bold; margin-top: 5px; }
+    
+    /* ランキングテーブル */
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
+    th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f8f9fa; }
+
+    /* モーダル（登録画面） */
+    #register-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; padding: 20px; border-radius: 8px; width: 85%; max-width: 400px; text-align: center; }
+
+    /* 初心者バナー強調スタイル */
+    .beginner-badge {
+      background: #e8f5e9;
+      border: 2px solid #4caf50;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .turns-count {
+      font-size: 1.4rem;
+      color: #2e7d32;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
   <h1>🏝️ 箱庭諸島 × 英単語クイズ</h1>
 
-  <!-- クイズエリア -->
-  <div class="card" id="quiz-card">
-    <h2>📝 ターン開発クイズ (全10問)</h2>
-    <div id="quiz-container">
-      <p id="question">クイズを読み込んでいます...</p>
-      <div id="choices"></div>
+  <!-- 初回登録モーダル（未登録時に自動表示） -->
+  <div id="register-modal" style="display: none;">
+    <div class="modal-content">
+      <h2>🏆 島主登録（初回のみ）</h2>
+      <p style="font-size: 0.85rem; color: #666;">箱庭諸島へようこそ！あなたの島名を入力してゲームを開始してください。</p>
+      <input type="text" id="reg-island-name" placeholder="例: ひまわり島">
+      <button class="btn" onclick="registerIsland()">島を作成して建国する</button>
     </div>
   </div>
 
-  <!-- 開発コマンド入力エリア（クイズ成功で開く） -->
-  <div class="card" id="command-form">
-    <h2>🛠️ 島の開発コマンド</h2>
-    
-    <label>島名（プレイヤー名）:</label>
-    <input type="text" id="player-name" placeholder="例: ひまわり島">
+  <!-- トップ画面：1. 諸島ランキング -->
+  <div class="card">
+    <h2>🏆 箱庭諸島 ランキング</h2>
+    <table id="ranking-table">
+      <thead>
+        <tr>
+          <th>順位</th>
+          <th>島名</th>
+          <th>人口</th>
+          <th>資金</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-list">
+        <tr><td colspan="4">ランキング読み込み中...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <h3>🗺️ 開拓開発エリア (12×12)</h3>
-    <p style="font-size: 0.8rem; color: #666;">マス目をタップして開発場所（座標）を選んでください。</p>
+  <!-- トップ画面：2. 自分の島マップ -->
+  <div class="card">
+    <h2>🗺️ 自分の島マップ (<span id="my-island-title">マイ島</span>)</h2>
+    <p style="font-size: 0.8rem; color: #666; margin:0;">開発したいマス目をタップして選択してください。</p>
     <div id="map-grid" class="grid"></div>
     <div class="coords-display" id="coords-text">選択座標: X: 0, Y: 0</div>
+  </div>
 
-    <label style="margin-top: 15px; display: block;">実行コマンド:</label>
-    <select id="command-type">
-      <option value="整地">整地 (資金: 5億円)</option>
-      <option value="農場建設">農場建設 (資金: 20億円)</option>
-      <option value="工場建設">工場建設 (資金: 50億円)</option>
-      <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
-      <option value="偽装基地建設">偽装基地建設 (資金: 80億円)</option>
-      <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
-      <option value="PPミサイル発射">PPミサイル発射 (資金: 50億円)</option>
-    </select>
+  <!-- トップ画面：3. クイズ ＆ コマンド送信エリア -->
+  <div class="card" id="action-card">
+    <!-- 初心者期間メッセージ（残数がひと目でわかるデザイン） -->
+    <div id="beginner-notice" class="beginner-badge" style="display:none;">
+      🔰 <b>初心者保護期間中</b><br>
+      クイズ免除の残りコマンド可能数: <span class="turns-count" id="turns-left">5</span> 回
+    </div>
 
-    <button class="btn" onclick="submitCommand()">コマンドを確定して送信</button>
-    <p id="submit-status" style="font-weight:bold; color:blue;"></p>
+    <!-- クイズ表示コンテナ -->
+    <div id="quiz-container">
+      <h2>📝 ターン開発クイズ (全10問)</h2>
+      <p style="font-size: 0.85rem; color: #555;">※7問以上正解で開発指示が解禁されます！</p>
+      <p id="question">クイズを読み込んでいます...</p>
+      <div id="choices"></div>
+    </div>
+
+    <!-- コマンド入力フォーム -->
+    <div id="command-form" style="display: none;">
+      <h3 style="margin-top: 0;">🚀 開発指示の送信</h3>
+      <label style="display: block;">実行コマンド:</label>
+      <select id="command-type">
+        <option value="整地">整地 (資金: 5億円)</option>
+        <option value="農場建設">農場建設 (資金: 20億円)</option>
+        <option value="工場建設">工場建設 (資金: 50億円)</option>
+        <option value="ミサイル基地建設">ミサイル基地建設 (資金: 100億円)</option>
+        <option value="偽装基地建設">偽装基地建設 (資金: 80億円)</option>
+        <option value="ミサイル発射">ミサイル発射 (資金: 30億円)</option>
+        <option value="PPミサイル発射">PPミサイル発射 (資金: 50億円)</option>
+      </select>
+
+      <button class="btn" onclick="submitCommand()">選択したマス(座標)へコマンドを送信</button>
+      <p id="submit-status" style="font-weight:bold; color:blue;"></p>
+    </div>
   </div>
 
   <script>
@@ -71,13 +129,76 @@
     let selectedX = 0;
     let selectedY = 0;
 
-    // クイズデータの読み込み
-    fetch('words.json')
-      .then(res => res.json())
-      .then(data => {
-        wordsData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
-        showQuestion();
-      });
+    let myIslandName = localStorage.getItem("hakoniwa_island_name");
+    let playTurns = parseInt(localStorage.getItem("hakoniwa_play_turns") || "0");
+
+    window.onload = () => {
+      if (!myIslandName) {
+        document.getElementById("register-modal").style.display = "flex";
+      } else {
+        document.getElementById("my-island-title").innerText = myIslandName;
+        setupTurnMode();
+      }
+
+      initMap();
+      loadRanking();
+    };
+
+    // 島登録処理
+    function registerIsland() {
+      const inputName = document.getElementById("reg-island-name").value.trim();
+      if (!inputName) {
+        alert("島名を入力してください。");
+        return;
+      }
+      myIslandName = inputName;
+      localStorage.setItem("hakoniwa_island_name", myIslandName);
+      localStorage.setItem("hakoniwa_play_turns", "0");
+      playTurns = 0;
+      
+      document.getElementById("register-modal").style.display = "none";
+      document.getElementById("my-island-title").innerText = myIslandName;
+      
+      setupTurnMode();
+    }
+
+    // 初心者（最初の5ターン）と通常モードの切り替え
+    function setupTurnMode() {
+      const remainingTurns = 5 - playTurns;
+
+      if (remainingTurns > 0) {
+        // クイズスキップモード
+        document.getElementById("beginner-notice").style.display = "block";
+        document.getElementById("turns-left").innerText = remainingTurns;
+        document.getElementById("quiz-container").style.display = "none";
+        document.getElementById("command-form").style.display = "block";
+      } else {
+        // 通常クイズモード
+        document.getElementById("beginner-notice").style.display = "none";
+        document.getElementById("quiz-container").style.display = "block";
+        document.getElementById("command-form").style.display = "none";
+        loadQuiz();
+      }
+    }
+
+    // 仮のランキング描画
+    function loadRanking() {
+      const rankingList = document.getElementById("ranking-list");
+      const dummyData = [
+        { rank: 1, name: myIslandName || "新規島", pop: "1,200人", money: "3,000億円" },
+        { rank: 2, name: "ひまわり島", pop: "800人", money: "1,500億円" },
+        { rank: 3, name: "わくわく島", pop: "500人", money: "500億円" }
+      ];
+
+      rankingList.innerHTML = dummyData.map(d => `
+        <tr>
+          <td><b>${d.rank}</b></td>
+          <td>${d.name}</td>
+          <td>${d.pop}</td>
+          <td>${d.money}</td>
+        </tr>
+      `).join("");
+    }
 
     // 12x12の島マップグリッドを作成
     function initMap() {
@@ -87,9 +208,10 @@
         for (let x = 0; x < 12; x++) {
           const cell = document.createElement('div');
           cell.className = 'cell';
-          cell.innerText = '平'; // 初期表示：平地
+          cell.innerText = '平';
           cell.dataset.x = x;
           cell.dataset.y = y;
+          if (x === 0 && y === 0) cell.classList.add('selected');
           cell.onclick = () => selectCell(cell, x, y);
           mapGrid.appendChild(cell);
         }
@@ -102,6 +224,16 @@
       selectedX = x;
       selectedY = y;
       document.getElementById('coords-text').innerText = `選択座標: X: ${x}, Y: ${y}`;
+    }
+
+    // クイズ処理
+    function loadQuiz() {
+      fetch('words.json')
+        .then(res => res.json())
+        .then(data => {
+          wordsData = data.sort(() => 0.5 - Math.random()).slice(0, 10);
+          showQuestion();
+        });
     }
 
     function showQuestion() {
@@ -132,9 +264,8 @@
       quizContainer.innerHTML = `<h3>クイズ終了！</h3><p>結果: 10問中 <b>${score}</b> 問正解</p>`;
       
       if (score >= 7) {
-        quizContainer.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！下のマップから開発を行ってください。</p>`;
+        quizContainer.innerHTML += `<p style="color:green;">✨ コマンド送信権を獲得しました！</p>`;
         document.getElementById('command-form').style.display = 'block';
-        initMap(); // マップを生成
       } else if (score <= 2) {
         quizContainer.innerHTML += `<p style="color:red;">⚠️ クイズ失敗... 島に怪獣が出現するリスクがあります！</p>`;
       } else {
@@ -144,14 +275,8 @@
 
     // コマンド送信処理
     function submitCommand() {
-      const name = document.getElementById('player-name').value;
       const cmd = document.getElementById('command-type').value;
       const status = document.getElementById('submit-status');
-
-      if (!name) {
-        alert("島名（プレイヤー名）を入力してください。");
-        return;
-      }
 
       status.innerText = "送信中...";
 
@@ -161,15 +286,21 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "submitCommand",
-          playerName: name,
+          playerName: myIslandName,
           command: cmd,
           x: selectedX,
           y: selectedY,
-          score: score
+          score: (playTurns < 5) ? 10 : score
         })
       })
       .then(() => {
-        status.innerHTML = `✅ コマンドを送信しました！<br>（指示: [${cmd}] 座標: X=${selectedX}, Y=${selectedY}）<br>次回の更新ターン（6時間ごと）に自動実行されます。`;
+        playTurns++;
+        localStorage.setItem("hakoniwa_play_turns", playTurns.toString());
+
+        status.innerHTML = `✅ コマンドを送信しました！<br>（指示: [${cmd}] 座標: X=${selectedX}, Y=${selectedY}）<br>次回の更新ターンに自動実行されます。`;
+        
+        // 残りターン数の表示を更新
+        setupTurnMode();
       })
       .catch(err => {
         status.innerText = "送信エラーが発生しました。";
