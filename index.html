@@ -14,6 +14,7 @@
     .btn-danger { background: #d9534f; margin-top: 15px; }
     .btn-danger:active { background: #c9302c; }
     .btn-secondary { background: #008CBA; }
+    .btn-small { padding: 4px 8px; font-size: 0.8rem; width: auto; margin: 0; }
     .choice-btn { background: #f0f0f0; color: #333; border: 1px solid #ccc; margin-bottom: 8px; }
 
     /* ステータスパネル */
@@ -82,6 +83,24 @@
     }
     .turns-count { font-size: 1.4rem; color: #2e7d32; font-weight: bold; }
     .error-msg { color: #d9534f; font-size: 0.85rem; margin-top: 5px; display: none; }
+
+    /* コマンド履歴リストスタイル */
+    .command-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0 0;
+    }
+    .command-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -181,6 +200,13 @@
       <p id="submit-status" style="font-weight:bold; color:blue;"></p>
     </div>
 
+    <!-- 予約済みコマンドの確認・編集エリア -->
+    <div id="command-queue-card" style="margin-top: 20px;">
+      <h3 style="margin-bottom: 8px; font-size: 1rem;">📋 送信済み（実行待ち）コマンド一覧</h3>
+      <div id="queue-empty" style="font-size: 0.85rem; color: #888;">送信済みのコマンドはありません。</div>
+      <ul id="command-queue-list" class="command-list"></ul>
+    </div>
+
     <!-- リセットボタン -->
     <hr style="margin-top: 25px; border: 0; border-top: 1px solid #eee;">
     <button class="btn btn-danger" onclick="deleteMyIsland()">💣 マイ島をリセット（削除）する</button>
@@ -223,6 +249,7 @@
 
     let myIslandName = localStorage.getItem("hakoniwa_island_name");
     let availableCommands = parseInt(localStorage.getItem("hakoniwa_available_commands") || "5");
+    let commandQueue = JSON.parse(localStorage.getItem("hakoniwa_command_queue") || "[]");
 
     window.onload = () => {
       loadRanking();
@@ -233,6 +260,7 @@
         document.getElementById("my-island-title").innerText = myIslandName;
         loadSavedMap();
         setupTurnMode();
+        renderCommandQueue();
       }
     };
 
@@ -274,8 +302,10 @@
 
       myIslandName = inputName;
       availableCommands = 5;
+      commandQueue = [];
       localStorage.setItem("hakoniwa_island_name", myIslandName);
       localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
+      localStorage.setItem("hakoniwa_command_queue", JSON.stringify(commandQueue));
 
       generateRandomIsland();
       
@@ -284,6 +314,7 @@
       regBtn.disabled = false;
       regBtn.innerText = "島をランダム生成して建国する";
       setupTurnMode();
+      renderCommandQueue();
       loadRanking();
     }
 
@@ -490,6 +521,13 @@
 
       status.innerText = "送信中...";
 
+      const newCmd = {
+        id: Date.now(),
+        command: cmd,
+        x: selectedX,
+        y: selectedY
+      };
+
       fetch(GAS_URL, {
         method: "POST",
         mode: "no-cors",
@@ -505,14 +543,57 @@
       })
       .then(() => {
         availableCommands--;
-        localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
+        commandQueue.push(newCmd);
 
-        status.innerHTML = `✅ コマンドを送信しました！<br>（指示: [${cmd}] 座標: X=${selectedX}, Y=${selectedY}）`;
+        localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
+        localStorage.setItem("hakoniwa_command_queue", JSON.stringify(commandQueue));
+
+        status.innerHTML = `✅ コマンドを送信・予約しました！`;
         setupTurnMode();
+        renderCommandQueue();
       })
       .catch(err => {
         status.innerText = "送信エラーが発生しました。";
       });
+    }
+
+    function renderCommandQueue() {
+      const queueList = document.getElementById('command-queue-list');
+      const emptyNotice = document.getElementById('queue-empty');
+
+      queueList.innerHTML = '';
+
+      if (commandQueue.length === 0) {
+        emptyNotice.style.display = 'block';
+        return;
+      }
+
+      emptyNotice.style.display = 'none';
+
+      commandQueue.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'command-item';
+        li.innerHTML = `
+          <span><b>#${index + 1}</b> [${item.command}] (X: ${item.x}, Y: ${item.y})</span>
+          <button class="btn btn-danger btn-small" onclick="cancelCommand(${item.id})">取り消し</button>
+        `;
+        queueList.appendChild(li);
+      });
+    }
+
+    function cancelCommand(id) {
+      if (!confirm("このコマンドを取り消しますか？\n（消費されたコマンド可能数が1手元に戻ります）")) return;
+
+      commandQueue = commandQueue.filter(cmd => cmd.id !== id);
+      availableCommands++;
+
+      localStorage.setItem("hakoniwa_available_commands", availableCommands.toString());
+      localStorage.setItem("hakoniwa_command_queue", JSON.stringify(commandQueue));
+
+      setupTurnMode();
+      renderCommandQueue();
+
+      // GAS側にもキャンセル通知を落とす場合はここに非同期リクエストを送信可能
     }
 
     function deleteMyIsland() {
@@ -522,6 +603,7 @@
         localStorage.removeItem("hakoniwa_island_name");
         localStorage.removeItem("hakoniwa_map_data");
         localStorage.removeItem("hakoniwa_available_commands");
+        localStorage.removeItem("hakoniwa_command_queue");
         localStorage.removeItem("hakoniwa_play_turns");
 
         alert("マイ島を削除しました。ページを再読み込みして新しく建国してください。");
